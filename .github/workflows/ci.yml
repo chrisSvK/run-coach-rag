@@ -55,25 +55,37 @@ jobs:
         working-directory: ./apps/web
         run: npm run build
 
-      - name: Generate Python SBOM
+      - name: Generate Python SBOM (API)
         continue-on-error: true
+        working-directory: ./apps/api
         run: |
           pip install cyclonedx-bom
-          # Generate SBOM for API
-          cd apps/api
-          cyclonedx-py requirements -o ../../bom-python-api.xml || echo "Could not generate API SBOM"
-          cd ../..
-          # Generate SBOM for Workers
-          cd apps/workers
-          cyclonedx-py requirements -o ../../bom-python-workers.xml || echo "Could not generate Workers SBOM"
-          cd ../..
+          cyclonedx-py environment --output-format xml --output-file ../../bom-python-api.xml
+
+      - name: Generate Python SBOM (Workers)
+        continue-on-error: true
+        working-directory: ./apps/workers
+        run: |
+          cyclonedx-py environment --output-format xml --output-file ../../bom-python-workers.xml
 
       - name: Generate Node SBOM
         continue-on-error: true
         working-directory: ./apps/web
         run: |
           npm install -g @cyclonedx/cyclonedx-npm
-          cyclonedx-npm --output-file ../bom-node.xml || echo "Could not generate Node SBOM"
+          cyclonedx-npm --output-format XML --output-file ../../bom-node.xml
+
+      - name: Verify SBOM files
+        run: |
+          echo "Checking generated SBOM files..."
+          ls -lh bom-*.xml || echo "No SBOM files found"
+          for file in bom-*.xml; do
+            if [ -f "$file" ]; then
+              echo "=== $file ==="
+              wc -l "$file"
+              head -n 5 "$file"
+            fi
+          done
 
       - name: Upload Python API SBOM
         uses: actions/upload-artifact@v4
@@ -96,5 +108,5 @@ jobs:
         if: always()
         with:
           name: bom-node
-          path: apps/bom-node.xml
+          path: bom-node.xml
           if-no-files-found: ignore
