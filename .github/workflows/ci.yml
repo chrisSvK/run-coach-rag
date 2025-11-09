@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Python dependencies (API)
+        working-directory: ./apps/api
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Install Python dependencies (Workers)
+        working-directory: ./apps/workers
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Lint Python code
+        run: |
+          pip install ruff
+          ruff check apps/api apps/workers || true
+        continue-on-error: true
+
+      - name: Install Node dependencies (Web)
+        working-directory: ./apps/web
+        run: npm ci
+
+      - name: Lint Next.js app
+        working-directory: ./apps/web
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Build Next.js app
+        working-directory: ./apps/web
+        run: npm run build
+
+      - name: Generate Python SBOM
+        continue-on-error: true
+        run: |
+          pip install cyclonedx-bom
+          # Generate SBOM for API
+          cd apps/api
+          cyclonedx-py requirements -o ../../bom-python-api.xml || echo "Could not generate API SBOM"
+          cd ../..
+          # Generate SBOM for Workers
+          cd apps/workers
+          cyclonedx-py requirements -o ../../bom-python-workers.xml || echo "Could not generate Workers SBOM"
+          cd ../..
+
+      - name: Generate Node SBOM
+        continue-on-error: true
+        working-directory: ./apps/web
+        run: |
+          npm install -g @cyclonedx/cyclonedx-npm
+          cyclonedx-npm --output-file ../bom-node.xml || echo "Could not generate Node SBOM"
+
+      - name: Upload Python API SBOM
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bom-python-api
+          path: bom-python-api.xml
+          if-no-files-found: ignore
+
+      - name: Upload Python Workers SBOM
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bom-python-workers
+          path: bom-python-workers.xml
+          if-no-files-found: ignore
+
+      - name: Upload Node SBOM
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bom-node
+          path: apps/bom-node.xml
+          if-no-files-found: ignore

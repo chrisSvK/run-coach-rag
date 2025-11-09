@@ -1,0 +1,13 @@
+[project]
+name = "run-coach-rag-workers"
+version = "0.1.0"
+description = "Celery workers for run-coach-rag"
+requires-python = ">=3.12"
+dependencies = [
+    "celery>=5.3.0",
+    "redis>=5.0.0",
+]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
