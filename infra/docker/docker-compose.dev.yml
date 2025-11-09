@@ -53,14 +53,30 @@ services:
   web:
     build:
       context: ../../apps/web
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: run-coach-rag-web
     ports:
       - "3000:3000"
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NODE_ENV=development
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
+      - TURBOPACK_USE_WATCHPACK=true
     depends_on:
       - api
+    volumes:
+      - ../../apps/web:/app
+      - /app/node_modules
+      - /app/.next
+    develop:
+      watch:
+        - action: sync
+          path: ./../../apps/web
+          target: /app
+          ignore:
+            - node_modules/
+            - .next/
 
 volumes:
   qdrant_storage:

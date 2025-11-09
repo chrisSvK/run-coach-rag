@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image from 'next/image';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -19,7 +19,7 @@ export default function Home() {
             run-coach-rag
           </h1>
           <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            AI-powered running coach with RAG capabilities. API URL: {API_URL}
+            AAAAI-powered running coach with RAG capabilities. API URL: {API_URL}
           </p>
         </div>
         <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">

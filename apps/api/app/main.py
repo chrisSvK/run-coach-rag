@@ -7,4 +7,4 @@ app = FastAPI(title="run-coach-rag API")
 @app.get("/healthz")
 async def healthz() -> dict[str, str]:
     """Health check endpoint."""
-    return {"status": "ok"}
+    return {"status": "okkkk"}
